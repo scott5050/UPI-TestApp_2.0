@@ -53,8 +53,8 @@
     .float-next-btn:active{transform:translateX(-50%) scale(0.97);}
     .float-next-btn:disabled{background:#ccc;box-shadow:none;}
 
-    /* 테스트 입력 — 하단 버튼 공간 확보 */
-    #screen-test .container{padding-bottom:88px;}
+    /* 테스트 입력 — 하단 버튼 공간 불필요 (인라인 배치) */
+    #screen-test .container{padding-bottom:0;}
     .section-label{font-size:13px;color:#555;font-weight:700;margin:20px 0 10px;padding-left:10px;border-left:4px solid var(--blue);}
     .store-input-wrap{background:white;border-radius:14px;padding:14px 16px;box-shadow:var(--card-shadow);margin-bottom:4px;}
     .store-input-wrap label{font-size:12px;color:#888;font-weight:600;}
@@ -90,12 +90,11 @@
     .card-row-label{font-size:13px;color:#444;font-weight:600;}
     .card-row input{width:58%;padding:8px 12px;border:1px solid #c0dcd9;border-radius:8px;font-size:13px;background:white;outline:none;}
 
-    /* 하단 고정 버튼 — position:fixed + 정확한 max-width 정렬 */
+    /* 하단 버튼 — 스크롤 흐름 내 인라인 배치 */
     .bottom-bar{
-      position:fixed;bottom:0;left:0;right:0;
-      background:white;padding:12px 16px 28px;
-      box-shadow:0 -4px 20px rgba(0,0,0,0.08);
-      display:flex;gap:8px;z-index:100;
+      display:flex;gap:8px;
+      padding:20px 0 32px;
+      width:100%;
     }
     .bb-btn{flex:1;padding:14px 4px;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;transition:var(--tr);}
     .bb-btn:active{transform:scale(0.96);}
@@ -316,53 +315,12 @@
         <div class="card-row"><span class="card-row-label">화웨이페이</span><input type="text" id="cc_huawei" placeholder="카드 번호" oninput="updateCard('huawei',this.value)"></div>
         <div class="card-row"><span class="card-row-label">QR</span><input type="text" id="cc_qr" placeholder="카드 번호" oninput="updateCard('qr',this.value)"></div>
       </div>
-<div class="common-card-box">
-        </div>
-
-      <div class="bottom-action-area">
+      <div class="bottom-bar">
         <button class="bb-btn bb-summary" onclick="showSummary()">요약 확인</button>
         <button class="bb-btn bb-upload" onclick="uploadAndSave()">업로드 및 저장</button>
         <button class="bb-btn bb-excel" onclick="saveExcel()">엑셀 다운</button>
       </div>
-      
-      <div style="height:16px;"></div> </div> </div> ```
-
-### 2. 필수 CSS 수정 (Style 태그 내 수정)
-상태바나 버튼이 화면 중간에 끼는 현상을 방지하기 위해, 기존 CSS에서 `.bottom-bar`에 적용되어 있던 `position: fixed;` 속성을 제거하고 아래와 같이 변경해야 합니다.
-
-```css
-/* 하단 바 스타일 수정 */
-.bottom-action-area {
-  display: flex;
-  gap: 8px;
-  margin-top: 20px; /* 공통 카드 섹션과의 간격 */
-  padding: 0 5px;
-  position: relative; /* fixed에서 relative로 변경하여 위치 고정 해제 */
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* 버튼 공통 스타일 (크기 및 레이아웃 조정) */
-.bb-btn {
-  flex: 1;
-  padding: 15px 5px;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: bold;
-  color: white;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.bb-btn:active {
-  transform: scale(0.98);
-}
-
-/* 버튼별 색상 유지 */
-.bb-summary { background-color: #00338D; }
-.bb-upload { background-color: #008077; }
-.bb-excel { background-color: #555555; }
+    </div>
   </div>
 </div>
 
@@ -805,37 +763,42 @@ function saveExcel(){
 }
 
 // ══ 업로드 ══
+let isBusy=false;
 async function uploadAndSave(){
+  if(isBusy)return;
   const sn=document.getElementById('storeName').value;
   if(!sn){showToast('⚠️ 가맹점명을 입력해주세요.');return;}
   if(!selectedBrandId){showToast('⚠️ 브랜드를 선택해주세요.');return;}
   if(!settings.sheetsUrl){showToast('⚠️ 설정에서 Sheets URL을 먼저 입력해주세요.');return;}
-  showUploadModal('loading');
+  isBusy=true;
+  showUploadModal('loading','저장 중...','Google Sheets에 업로드하고 있습니다.');
   const brand=brands.find(b=>b.id===selectedBrandId);
-  const payload={action:'saveSession',brandId:selectedBrandId,brandName:brand?.name||'',date:new Date().toISOString().split('T')[0],storeName:sn,records:JSON.parse(JSON.stringify(records))};
+  // 카드번호 자동 대입
+  const enriched=records.map(r=>({...r,cardNumber:getAssignedCard(r.category,r.subCategory)}));
+  const payload={action:'saveSession',brandId:selectedBrandId,brandName:brand?.name||'',date:new Date().toISOString().split('T')[0],storeName:sn,records:enriched};
   const result=await sheetsPost(payload);
+  isBusy=false;
   if(result&&result.ok){
-    if(brand)brand.sessions.push({date:payload.date,storeName:sn,records:payload.records});
-    showUploadModal('success');
-    setTimeout(()=>{hideUploadModal();showToast('✅ Google Sheets에 저장 완료!');},1500);
+    if(brand)brand.sessions.push({date:payload.date,storeName:sn,records:enriched});
+    showUploadModal('success','저장 완료!','Google Sheets에 저장되었습니다.');
+    setTimeout(()=>hideUploadModal(),1800);
   }else{hideUploadModal();showToast('❌ 저장 실패. URL 설정을 확인해주세요.');}
 }
-function showUploadModal(state){
+function showUploadModal(state,title,sub){
   document.getElementById('uploadModal').classList.add('show');
   document.getElementById('uploadModalContent').innerHTML=state==='loading'
-    ?`<div class="upload-spinner"></div><div style="font-size:15px;font-weight:700;">저장 중...</div><div style="font-size:13px;color:#888;margin-top:6px;">잠시만 기다려 주세요</div>`
-    :`<div style="font-size:48px;margin-bottom:12px;">✅</div><div style="font-size:15px;font-weight:700;">저장 완료!</div>`;
+    ?`<div class="upload-spinner"></div><div style="font-size:15px;font-weight:700;">${title||'처리 중...'}</div><div style="font-size:13px;color:#888;margin-top:6px;">${sub||'잠시만 기다려 주세요'}</div>`
+    :`<div style="font-size:48px;margin-bottom:12px;">✅</div><div style="font-size:15px;font-weight:700;">${title||'완료!'}</div><div style="font-size:13px;color:#888;margin-top:6px;">${sub||''}</div>`;
 }
 function hideUploadModal(){document.getElementById('uploadModal').classList.remove('show');}
 
-// ══ 이탈 ══
+// ══ 이탈 (테스트 화면 뒤로가기) ══
 function confirmGoBack(){
-  if(records.some(r=>r.category||r.amount||r.subCategory))
-    document.getElementById('exitModal').classList.add('show');
-  else goBack();
+  if(records.some(r=>r.category||r.amount||r.subCategory)){
+    if(!confirm('저장을 완료한 후 테스트를 종료해 주세요.\n그래도 나가시겠습니까?'))return;
+  }
+  goBack();goBack(); // brand-select → main
 }
-async function uploadAndExit(){await uploadAndSave();setTimeout(()=>{closeModal('exitModal');goBack();goBack();},2500);}
-function excelAndExit(){saveExcel();closeModal('exitModal');goBack();goBack();}
 
 // ══ 가맹점 현황 ══
 function getEffectiveStatus(brandId,cat,sub){
@@ -989,12 +952,13 @@ function openOverrideModal(brandId){
     if(rel.some(r=>r.status==='N'))return 'N';
     return 'NA';
   }
-  function btnClass(st){return st==='Y'?'ov-btn ov-y':st==='N'?'ov-btn ov-n':'ov-btn ov-na';}
-  function btnLabel(st){return st==='Y'?'🟢':st==='N'?'🔴':'⬜';}
+  function safeId(key){return 'ovb_'+key.replace(/[^a-zA-Z0-9]/g,'_');}
   function makeBtn(cat,sub,label){
     const st=getStatus(cat,sub);
     const key=`${cat}|${sub}`;
-    return `<button class="${btnClass(st)}" id="ovb_${btoa(key).replace(/[^a-zA-Z0-9]/g,'')}" onclick="cycleOvBtn('${cat}','${sub}')">${btnLabel(st)} ${label}</button>`;
+    const cls=st==='Y'?'ov-btn ov-y':st==='N'?'ov-btn ov-n':'ov-btn ov-na';
+    const icon=st==='Y'?'🟢':st==='N'?'🔴':'⬜';
+    return `<button class="${cls}" id="${safeId(key)}" onclick="cycleOvBtn('${cat}','${sub}')">${icon} ${label}</button>`;
   }
   const chkBtns=CHECK_CREDIT_METHODS.map(s=>makeBtn('체크카드',s,s)).join('');
   const credBtns=CHECK_CREDIT_METHODS.map(s=>makeBtn('신용카드',s,s)).join('');
@@ -1012,11 +976,12 @@ function cycleOvBtn(cat,sub){
   const cur=ovTemp[key]||'NA';
   const next=cur==='Y'?'N':cur==='N'?'NA':'Y';
   ovTemp[key]=next;
-  const elId='ovb_'+btoa(key).replace(/[^a-zA-Z0-9]/g,'');
-  const btn=document.getElementById(elId);
+  const safeId='ovb_'+key.replace(/[^a-zA-Z0-9]/g,'_');
+  const btn=document.getElementById(safeId);
   if(btn){
     btn.className=next==='Y'?'ov-btn ov-y':next==='N'?'ov-btn ov-n':'ov-btn ov-na';
-    btn.innerHTML=(next==='Y'?'🟢':next==='N'?'🔴':'⬜')+' '+(sub.includes('듀얼')||sub.includes('QR')&&cat!=='체크카드'&&cat!=='신용카드'?OTHER_ITEMS.find(o=>o.cat===cat&&o.sub===sub)?.label||sub:sub);
+    const dispLabel=OTHER_ITEMS.find(o=>o.cat===cat&&o.sub===sub)?.label||sub;
+    btn.innerHTML=(next==='Y'?'🟢':next==='N'?'🔴':'⬜')+' '+dispLabel;
   }
 }
 function saveOverride(){
@@ -1092,26 +1057,36 @@ function cycleSdField(key,btn){
 }
 
 async function saveSessDetail(){
+  if(isBusy)return;
+  isBusy=true;
+  showUploadModal('loading','저장 중...','세션을 업데이트하고 있습니다.');
   const brand=brands.find(b=>b.id===sdBrandId);
   brand.sessions[sdSessionIdx].records=JSON.parse(JSON.stringify(sdRecords));
   if(settings.sheetsUrl){
     await sheetsPost({action:'updateSession',brandId:sdBrandId,sessionIdx:sdSessionIdx,session:brand.sessions[sdSessionIdx]});
   }
-  closeModal('sessDetailModal');
-  renderBrandDetail(sdBrandId);renderBrandGrid();
-  showToast('✅ 세션이 수정되었습니다.');
+  isBusy=false;
+  showUploadModal('success','저장 완료!','세션이 수정되었습니다.');
+  setTimeout(()=>{hideUploadModal();closeModal('sessDetailModal');renderBrandDetail(sdBrandId);renderBrandGrid();},1500);
 }
 
 function confirmDeleteSession(){
   if(!confirm('이 날짜의 거래 내역 전체를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'))return;
+  if(!confirm('정말로 삭제하시겠습니까?'))return;
+  deleteSession();
+}
+async function deleteSession(){
+  if(isBusy)return;
+  isBusy=true;
+  showUploadModal('loading','삭제 중...','세션을 삭제하고 있습니다.');
   const brand=brands.find(b=>b.id===sdBrandId);
   brand.sessions.splice(sdSessionIdx,1);
   if(settings.sheetsUrl){
-    sheetsPost({action:'deleteSession',brandId:sdBrandId,sessionIdx:sdSessionIdx});
+    await sheetsPost({action:'deleteSession',brandId:sdBrandId,sessionIdx:sdSessionIdx});
   }
-  closeModal('sessDetailModal');
-  renderBrandDetail(sdBrandId);renderBrandGrid();
-  showToast('🗑 세션이 삭제되었습니다.');
+  isBusy=false;
+  showUploadModal('success','삭제 완료!','세션이 삭제되었습니다.');
+  setTimeout(()=>{hideUploadModal();closeModal('sessDetailModal');renderBrandDetail(sdBrandId);renderBrandGrid();},1500);
 }
 
 // ══ 특이사항 ══
@@ -1150,14 +1125,19 @@ function previewPhoto(input){
   reader.readAsDataURL(input.files[0]);
 }
 async function createBrand(){
+  if(isBusy)return;
   const name=document.getElementById('newBrandName').value.trim();
   if(!name){showToast('⚠️ 브랜드명을 입력해주세요.');return;}
   if(!settings.sheetsUrl){showToast('⚠️ 설정에서 Sheets URL을 먼저 입력해주세요.');return;}
+  isBusy=true;
+  showUploadModal('loading','브랜드 생성 중...','잠시만 기다려 주세요.');
   const icons=['🏪','🏬','🏦','🏨','🍔','☕','🛒','🎮','💊','✈️'];
   const brand={id:Date.now().toString(),name,icon:icons[Math.floor(Math.random()*icons.length)],photo:newBrandPhotoData||null,createdAt:new Date().toISOString().split('T')[0],notes:'',sessions:[]};
   brands.push(brand);
   await sheetsPost({action:'saveBrands',brands:brands.map(b=>({id:b.id,name:b.name,icon:b.icon,photo:b.photo,createdAt:b.createdAt,notes:b.notes||''}))});
-  closeModal('newBrandModal');renderBrandGrid();showToast(`✅ "${name}" 브랜드가 추가되었습니다.`);
+  isBusy=false;
+  showUploadModal('success','브랜드 생성 완료!',`"${name}"이 추가되었습니다.`);
+  setTimeout(()=>{hideUploadModal();closeModal('newBrandModal');renderBrandGrid();},1500);
 }
 function openEditBrand(id){
   currentDetailBrandId=id;
@@ -1190,10 +1170,27 @@ async function saveEditBrand(){
 // ══ 설정 ══
 function openSettings(){document.getElementById('sheetsUrlInput').value=settings.sheetsUrl||'';document.getElementById('settingsModal').classList.add('show');}
 
-// ══ 토스트 ══
+// ══ 초기화 ══
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
-// ══ 초기화 ══
+// ══ 뒤로가기 물리키 처리 ══
+function pushState(){history.pushState({page:screenHistory[screenHistory.length-1]},'')}
+window.addEventListener('popstate',()=>{
+  if(screenHistory.length<=1){
+    if(confirm('앱을 종료하시겠습니까?')){history.go(-1);}
+    else{pushState();}
+    return;
+  }
+  // 테스트 화면에서 뒤로가기
+  if(screenHistory[screenHistory.length-1]==='test'){
+    if(records.some(r=>r.category||r.amount||r.subCategory)){
+      if(!confirm('저장을 완료한 후 테스트를 종료해 주세요.\n그래도 나가시겠습니까?')){pushState();return;}
+    }
+  }
+  goBack();
+  pushState();
+});
+pushState();
 loadLocalSettings();
 renderTabs();
 if(settings.sheetsUrl)loadBrandsFromSheets();
