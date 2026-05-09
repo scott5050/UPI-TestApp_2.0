@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>UPI 거래 테스트 매니저</title>
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#00338D">
+  <meta name="theme-color" content="#ffffff">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="UPI Manager">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -23,20 +24,20 @@
     .back-btn,.icon-btn{width:36px;height:36px;border:none;background:var(--bg);border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:var(--tr);}
     .back-btn:active,.icon-btn:active{transform:scale(0.9);background:#ddd;}
 
-    /* 메인 */
-    #screen-main{background:linear-gradient(160deg,#00338D 0%,#001f5c 60%,#0d1b3e 100%);}
+    /* 메인 — 흰색 테마 */
+    #screen-main{background:#f0f2f5;}
     .main-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 30px;}
-    .main-logo-wrap{background:rgba(255,255,255,0.1);border-radius:24px;padding:24px 36px;margin-bottom:16px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.15);animation:fadeDown 0.6s ease;}
-    .main-logo{height:52px;}
-    .main-subtitle{color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:50px;letter-spacing:1px;animation:fadeDown 0.6s ease 0.1s both;}
-    .main-btn{width:100%;max-width:300px;padding:18px;border:none;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;transition:var(--tr);margin-bottom:14px;animation:fadeUp 0.5s ease both;}
-    .main-btn-primary{background:white;color:var(--blue);box-shadow:0 8px 24px rgba(0,0,0,0.25);}
+    .main-logo-wrap{margin-bottom:12px;animation:fadeDown 0.6s ease;}
+    .main-logo{height:110px;display:block;}
+    .main-subtitle{color:#7a90b8;font-size:13px;margin-bottom:48px;letter-spacing:1px;animation:fadeDown 0.6s ease 0.1s both;}
+    .main-btn{width:100%;max-width:320px;padding:18px;border:none;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;transition:var(--tr);margin-bottom:14px;animation:fadeUp 0.5s ease both;}
+    .main-btn-primary{background:var(--grad);color:white;box-shadow:0 8px 24px rgba(0,51,141,0.25);}
     .main-btn-primary:active{transform:scale(0.97);}
-    .main-btn-secondary{background:rgba(255,255,255,0.12);color:white;border:1.5px solid rgba(255,255,255,0.25);animation-delay:0.1s;}
-    .main-btn-secondary:active{transform:scale(0.97);}
-    .main-settings-btn{position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr);}
-    .main-settings-btn:active{transform:scale(0.9) rotate(45deg);}
-    .main-version{position:absolute;bottom:20px;color:rgba(255,255,255,0.3);font-size:11px;}
+    .main-btn-secondary{background:white;color:var(--blue);border:1.5px solid #c8d8ff;box-shadow:0 4px 12px rgba(0,51,141,0.08);animation-delay:0.1s;}
+    .main-btn-secondary:active{transform:scale(0.97);background:#f0f5ff;}
+    .main-settings-btn{position:absolute;top:20px;right:20px;background:white;border:1px solid #dde5f5;color:var(--blue);width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr);box-shadow:0 2px 8px rgba(0,51,141,0.1);}
+    .main-settings-btn:active{transform:scale(0.9);}
+    .main-version{position:absolute;bottom:20px;color:#aac;font-size:11px;}
 
     /* 브랜드 선택 */
     .brand-select-list{margin-top:16px;display:flex;flex-direction:column;gap:12px;}
@@ -105,7 +106,7 @@
     /* 모달 공통 */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;padding:16px;align-items:flex-end;backdrop-filter:blur(4px);}
     .modal-overlay.show{display:flex;}
-    .modal-sheet{background:white;border-radius:24px 24px 20px 20px;width:100%;max-width:480px;margin:0 auto;max-height:88vh;overflow-y:auto;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);padding:20px;}
+    .modal-sheet{background:white;border-radius:24px 24px 20px 20px;width:100%;max-width:480px;margin:0 auto;max-height:88vh;overflow-y:auto;animation:slideUp 0.35s cubic-bezier(0.4,0,0.2,1);padding:20px;position:relative;}
     .modal-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px;}
 
     /* 요약 */
@@ -231,10 +232,10 @@
       <div class="main-logo-wrap">
         <img src="./Logo.png" alt="UnionPay" class="main-logo"
              onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-        <span style="display:none;font-size:28px;font-weight:900;color:white;letter-spacing:2px;">UPI</span>
+        <span style="display:none;font-size:36px;font-weight:900;color:var(--blue);letter-spacing:2px;">UPI</span>
       </div>
       <div class="main-subtitle">거래 테스트 매니저 v4.3</div>
-      <button class="main-btn main-btn-primary" onclick="goToTestStart()" style="animation-delay:0.15s">🧪 테스트 시작</button>
+      <button class="main-btn main-btn-primary" onclick="goToTestStart()" style="animation-delay:0.15s">🔍 테스트 시작</button>
       <button class="main-btn main-btn-secondary" onclick="openBrandsScreen()" style="animation-delay:0.25s">🏪 가맹점별 현황</button>
     </div>
     <div class="main-version">UPI Test Manager v4.3</div>
@@ -360,7 +361,8 @@
 <div id="sessDetailModal" class="modal-overlay" onclick="closeModal('sessDetailModal',event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
-    <div style="font-size:15px;font-weight:800;margin-bottom:2px;" id="sessDetailTitle"></div>
+    <button class="modal-close-btn" onclick="closeModal('sessDetailModal')">✕</button>
+    <div style="font-size:15px;font-weight:800;margin-bottom:2px;padding-right:36px;" id="sessDetailTitle"></div>
     <div style="font-size:12px;color:#888;margin-bottom:12px;" id="sessDetailSub"></div>
     <!-- 요약 박스 -->
     <div id="sessDetailSummary" class="report-box"></div>
@@ -380,7 +382,8 @@
 <div id="ovModal" class="modal-overlay" onclick="closeModal('ovModal',event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
-    <div style="font-size:16px;font-weight:800;margin-bottom:4px;">📋 통합 지원 현황 수정</div>
+    <button class="modal-close-btn" onclick="closeModal('ovModal')">✕</button>
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px;padding-right:36px;">📋 통합 지원 현황 수정</div>
     <div style="font-size:12px;color:#888;margin-bottom:16px;">버튼 클릭으로 상태 전환: 🟢지원 / 🔴미지원 / ⬜미테스트</div>
     <div id="ovContent"></div>
     <button class="create-brand-btn" style="margin-top:16px;" onclick="saveOverride()">저장</button>
@@ -449,7 +452,8 @@
 <div id="notesModal" class="modal-overlay" onclick="closeModal('notesModal',event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
-    <div style="font-size:16px;font-weight:800;margin-bottom:6px;">📝 브랜드 특이사항</div>
+    <button class="modal-close-btn" onclick="closeModal('notesModal')">✕</button>
+    <div style="font-size:16px;font-weight:800;margin-bottom:6px;padding-right:36px;">📝 브랜드 특이사항</div>
     <div style="font-size:12px;color:#888;margin-bottom:14px;">단말기 종류, 핫키 현황 등 자유롭게 입력</div>
     <textarea id="notesTextarea" rows="7" placeholder="예)&#10;단말기: Verifone VX520&#10;핫키: 입력 불필요&#10;기타 특이사항..."></textarea>
     <button class="create-brand-btn" style="margin-top:12px;" onclick="saveNotes()">저장</button>
@@ -498,18 +502,16 @@ let sdBrandId=null, sdSessionIdx=null, sdRecords=[], sdCurrentIdx=0, sdIsEdit=fa
 let overrides={};
 
 // ══ 통합 지원 현황 정의 ══
-// 체크/신용: IC인서트, 실물NFC, ApplePay, XiaomiPay, HuaweiPay (QR제외)
-// 기타: 체크QR, 신용QR, 듀얼 전부
-const CHECK_CREDIT_METHODS=['IC 인서트','실물 NFC','ApplePay','XiaomiPay','HuaweiPay'];
-const OTHER_ITEMS=[
-  {cat:'체크카드',sub:'QR CPM',label:'체크 QR CPM'},
-  {cat:'신용카드',sub:'QR CPM',label:'신용 QR CPM'},
-  {cat:'듀얼카드',sub:'IC 인서트',label:'듀얼 IC 인서트'},
-  {cat:'듀얼카드',sub:'실물 NFC',label:'듀얼 실물 NFC'},
-  {cat:'듀얼카드',sub:'ApplePay',label:'듀얼 ApplePay'},
-  {cat:'듀얼카드',sub:'XiaomiPay',label:'듀얼 XiaomiPay'},
-  {cat:'듀얼카드',sub:'HuaweiPay',label:'듀얼 HuaweiPay'},
-  {cat:'듀얼카드',sub:'QR CPM',label:'듀얼 QR CPM'},
+// 체크/신용: IC인서트·실물NFC·ApplePay·XiaomiPay·HuaweiPay·QR CPM
+// 듀얼: 모든 결제방식
+const CARD_METHODS=['IC 인서트','실물 NFC','ApplePay','XiaomiPay','HuaweiPay','QR CPM'];
+const DUAL_ITEMS=[
+  {cat:'듀얼카드',sub:'IC 인서트',   label:'듀얼 IC 인서트'},
+  {cat:'듀얼카드',sub:'실물 NFC',    label:'듀얼 실물 NFC'},
+  {cat:'듀얼카드',sub:'ApplePay',   label:'듀얼 ApplePay'},
+  {cat:'듀얼카드',sub:'XiaomiPay',  label:'듀얼 XiaomiPay'},
+  {cat:'듀얼카드',sub:'HuaweiPay',  label:'듀얼 HuaweiPay'},
+  {cat:'듀얼카드',sub:'QR CPM',     label:'듀얼 QR CPM'},
 ];
 
 // ══ 로컬 설정 ══
@@ -869,14 +871,15 @@ function buildSupportTable(brandId,allRecords){
     const cs=[];
     methods.forEach(sub=>{
       const st=getStatus(cat,sub);
-      if(st==='Y')cs.push(`<span class="method-chip mc-y">● ${sub}</span>`);
-      else if(st==='N')cs.push(`<span class="method-chip mc-n">● ${sub}</span>`);
+      const label=`${cat==='체크카드'?'체크':cat==='신용카드'?'신용':'듀얼'} ${sub}`;
+      if(st==='Y')cs.push(`<span class="method-chip mc-y">● ${label}</span>`);
+      else if(st==='N')cs.push(`<span class="method-chip mc-n">● ${label}</span>`);
     });
     return cs.length?`<div class="method-chips">${cs.join('')}</div>`:`<span style="color:#ccc;font-size:12px;">-</span>`;
   }
-  function otherChips(){
+  function dualChips(){
     const cs=[];
-    OTHER_ITEMS.forEach(({cat,sub,label})=>{
+    DUAL_ITEMS.forEach(({cat,sub,label})=>{
       const st=getStatus(cat,sub);
       if(st==='Y')cs.push(`<span class="method-chip mc-y">● ${label}</span>`);
       else if(st==='N')cs.push(`<span class="method-chip mc-n">● ${label}</span>`);
@@ -887,9 +890,9 @@ function buildSupportTable(brandId,allRecords){
     <table class="support-table">
       <thead><tr><th style="width:52px;">카드</th><th>결제 방식</th></tr></thead>
       <tbody>
-        <tr><td class="card-label">체크</td><td>${chips('체크카드',CHECK_CREDIT_METHODS)}</td></tr>
-        <tr><td class="card-label">신용</td><td>${chips('신용카드',CHECK_CREDIT_METHODS)}</td></tr>
-        <tr><td class="card-label">기타</td><td>${otherChips()}</td></tr>
+        <tr><td class="card-label">체크</td><td>${chips('체크카드',CARD_METHODS)}</td></tr>
+        <tr><td class="card-label">신용</td><td>${chips('신용카드',CARD_METHODS)}</td></tr>
+        <tr><td class="card-label">듀얼</td><td>${dualChips()}</td></tr>
       </tbody>
     </table>
     <button class="edit-support-btn" onclick="openOverrideModal('${brandId}')">✏️ 현황 직접 수정</button>
@@ -952,37 +955,32 @@ function openOverrideModal(brandId){
     if(rel.some(r=>r.status==='N'))return 'N';
     return 'NA';
   }
-  function safeId(key){return 'ovb_'+key.replace(/[^a-zA-Z0-9]/g,'_');}
+  function safeId(cat,sub){return 'ovb_'+`${cat}_${sub}`.replace(/[^a-zA-Z0-9]/g,'_');}
   function makeBtn(cat,sub,label){
     const st=getStatus(cat,sub);
-    const key=`${cat}|${sub}`;
     const cls=st==='Y'?'ov-btn ov-y':st==='N'?'ov-btn ov-n':'ov-btn ov-na';
     const icon=st==='Y'?'🟢':st==='N'?'🔴':'⬜';
-    return `<button class="${cls}" id="${safeId(key)}" onclick="cycleOvBtn('${cat}','${sub}')">${icon} ${label}</button>`;
+    return `<button class="${cls}" id="${safeId(cat,sub)}" onclick="cycleOvBtn('${cat}','${sub}',this)">${icon} ${label}</button>`;
   }
-  const chkBtns=CHECK_CREDIT_METHODS.map(s=>makeBtn('체크카드',s,s)).join('');
-  const credBtns=CHECK_CREDIT_METHODS.map(s=>makeBtn('신용카드',s,s)).join('');
-  const otherBtns=OTHER_ITEMS.map(({cat,sub,label})=>makeBtn(cat,sub,label)).join('');
+  const chkBtns=CARD_METHODS.map(s=>makeBtn('체크카드',s,`체크 ${s}`)).join('');
+  const credBtns=CARD_METHODS.map(s=>makeBtn('신용카드',s,`신용 ${s}`)).join('');
+  const dualBtns=DUAL_ITEMS.map(({cat,sub,label})=>makeBtn(cat,sub,label)).join('');
   document.getElementById('ovContent').innerHTML=`
     <div class="ov-grid">
       <div><div class="ov-group-label">체크카드</div><div class="ov-btns">${chkBtns}</div></div>
       <div><div class="ov-group-label">신용카드</div><div class="ov-btns">${credBtns}</div></div>
-      <div><div class="ov-group-label">기타 (QR / 듀얼)</div><div class="ov-btns">${otherBtns}</div></div>
+      <div><div class="ov-group-label">듀얼카드</div><div class="ov-btns">${dualBtns}</div></div>
     </div>`;
   document.getElementById('ovModal').classList.add('show');
 }
-function cycleOvBtn(cat,sub){
+function cycleOvBtn(cat,sub,btn){
   const key=`${cat}|${sub}`;
   const cur=ovTemp[key]||'NA';
   const next=cur==='Y'?'N':cur==='N'?'NA':'Y';
   ovTemp[key]=next;
-  const safeId='ovb_'+key.replace(/[^a-zA-Z0-9]/g,'_');
-  const btn=document.getElementById(safeId);
-  if(btn){
-    btn.className=next==='Y'?'ov-btn ov-y':next==='N'?'ov-btn ov-n':'ov-btn ov-na';
-    const dispLabel=OTHER_ITEMS.find(o=>o.cat===cat&&o.sub===sub)?.label||sub;
-    btn.innerHTML=(next==='Y'?'🟢':next==='N'?'🔴':'⬜')+' '+dispLabel;
-  }
+  const label=DUAL_ITEMS.find(o=>o.cat===cat&&o.sub===sub)?.label||`${cat==='체크카드'?'체크':'신용'} ${sub}`;
+  btn.className=next==='Y'?'ov-btn ov-y':next==='N'?'ov-btn ov-n':'ov-btn ov-na';
+  btn.innerHTML=(next==='Y'?'🟢':next==='N'?'🔴':'⬜')+' '+label;
 }
 function saveOverride(){
   if(!overrides[ovBrandId])overrides[ovBrandId]={};
