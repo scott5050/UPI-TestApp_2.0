@@ -1,17 +1,24 @@
 {
-  "short_name": "UPI매니저",
   "name": "UPI 거래 테스트 매니저",
-  "description": "카드 거래 데이터를 관리하고 저장하는 툴",
-  "icons": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/5968/5968260.png",
-      "type": "Logo.png",
-      "sizes": "512x512",
-      "purpose": "any maskable"
-    }
-  ],
+  "short_name": "UPI Manager",
+  "description": "UnionPay 가맹점 거래 테스트 관리 툴",
   "start_url": "./index.html",
   "display": "standalone",
-  "theme_color": "#00338D",
-  "background_color": "#f0f2f5"
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
