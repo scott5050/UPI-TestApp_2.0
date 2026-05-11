@@ -249,7 +249,7 @@
     <h2>브랜드 선택</h2>
     <div style="width:36px"></div>
   </div>
-  <div class="container" style="padding-bottom:100px;">
+  <div class="container" style="padding-bottom:100px;overflow-y:auto;">
     <p style="font-size:13px;color:#888;margin-top:8px;">테스트할 브랜드를 선택하세요.</p>
     <div class="brand-select-list" id="brandSelectList"></div>
   </div>
@@ -300,6 +300,7 @@
         <div class="toggle-row"><span class="toggle-label">Hotkey</span><button class="toggle-btn state-na" id="hotkey" onclick="toggleStep('hotkey')">N/A</button></div>
         <div class="toggle-row"><span class="toggle-label">Brand</span><button class="toggle-btn state-na" id="brandSelection" onclick="toggleStep('brandSelection')">N/A</button></div>
         <div class="toggle-row"><span class="toggle-label">PIN 출력</span><button class="toggle-btn state-na" id="pinOut" onclick="toggleStep('pinOut')">N/A</button></div>
+        <div class="toggle-row"><span class="toggle-label">PIN 입력</span><button class="toggle-btn state-na" id="pinIn" onclick="toggleStep('pinIn')">N/A</button></div>
         <div class="toggle-row"><span class="toggle-label">PinByPass</span><button class="toggle-btn state-na" id="pinBypass" onclick="toggleStep('pinBypass')">N/A</button></div>
         <div class="toggle-row" id="qpsRow"><span class="toggle-label">QPS</span><button class="toggle-btn state-na" id="qpsStatus" onclick="toggleStep('qpsStatus')">N/A</button></div>
         <div class="toggle-row"><span class="toggle-label">승인 결과</span><button class="toggle-btn state-na" id="status" onclick="toggleStep('status')">N/A</button></div>
@@ -491,7 +492,7 @@
 // ══ 상태 ══
 let brands=[], settings={sheetsUrl:''}, selectedBrandId=null, currentDetailBrandId=null;
 let commonCards={realCheck:'',realCredit:'',realDual:'',apple:'',xiaomi:'',huawei:'',qr:''};
-const initRecord=()=>({category:'',subCategory:'',amount:'',hotkey:'N/A',brandSelection:'N/A',pinOut:'N/A',pinBypass:'N/A',qpsStatus:'N/A',status:'N/A',memo:''});
+const initRecord=()=>({category:'',subCategory:'',amount:'',hotkey:'N/A',brandSelection:'N/A',pinOut:'N/A',pinIn:'N/A',pinBypass:'N/A',qpsStatus:'N/A',status:'N/A',memo:''});
 let records=[initRecord()], currentIdx=0, screenHistory=['main'];
 let newBrandPhotoData=null, editBrandPhotoData=null;
 
@@ -666,7 +667,7 @@ function updateUI(){
   document.getElementById('amountDisplay').value=(r.amount||'').replace('￦','').replace(/[^0-9,]/g,'');
   document.getElementById('memo').value=r.memo||'';
   document.getElementById('qpsRow').style.display=r.subCategory==='IC 인서트'?'none':'flex';
-  ['hotkey','brandSelection','pinOut','pinBypass','qpsStatus','status'].forEach(id=>{
+  ['hotkey','brandSelection','pinOut','pinIn','pinBypass','qpsStatus','status'].forEach(id=>{
     const btn=document.getElementById(id);btn.textContent=r[id];
     btn.className='toggle-btn '+(r[id]==='Y'?'state-y':r[id]==='N'?'state-n':'state-na');
   });
@@ -682,8 +683,8 @@ function buildSummaryHTML(recs,storeName){
     <div class="report-title">📋 요약 — ${storeName||'미지정'}</div>
     <div class="summary-row"><span><span class="status-tag tag-success">성공</span></span><span style="font-size:12px;">${sl.join(', ')||'없음'}</span></div>
     <div class="summary-row"><span><span class="status-tag tag-fail">실패</span></span><span style="font-size:12px;">${fl.join(', ')||'없음'}</span></div>
-    <div style="font-size:11px;color:#888;margin-top:10px;padding-top:10px;border-top:1px dashed #ddd;">
-      Hotkey:${f(getSummaryStatus('hotkey',recs))} / Brand:${f(getSummaryStatus('brandSelection',recs))} / PIN:${f(getSummaryStatus('pinOut',recs))} / PBP:${f(getSummaryStatus('pinBypass',recs))} / QPS:${f(getSummaryStatus('qpsStatus',recs))}
+          <div style="font-size:11px;color:#888;margin-top:10px;padding-top:10px;border-top:1px dashed #ddd;">
+      Hotkey:${f(getSummaryStatus('hotkey',recs))} / Brand:${f(getSummaryStatus('brandSelection',recs))} / PIN출력:${f(getSummaryStatus('pinOut',recs))} / PIN입력:${f(getSummaryStatus('pinIn',recs))} / PBP:${f(getSummaryStatus('pinBypass',recs))} / QPS:${f(getSummaryStatus('qpsStatus',recs))}
     </div>
   </div>`;
 }
@@ -756,8 +757,16 @@ function updateSumDetail(idx){
 // ══ 엑셀 ══
 function saveExcel(){
   const sn=document.getElementById('storeName').value||'테스트';
-  const headers=["Number","Date","Merchant","Card Number","Card Type","Transaction Amount","Transaction Type","With/without hotkey?","Brand Selection","Terminal Request PIN?","PIN Bypass support?","QPS support?","Successful/Failed?","Memo"];
-  const dataRows=records.map((r,i)=>[i+1,new Date().toISOString().split('T')[0],sn,getAssignedCard(r.category,r.subCategory),r.category,r.amount,r.subCategory,r.hotkey,r.brandSelection,r.pinOut,r.pinBypass,r.qpsStatus,r.status,r.memo]);
+  const cardTypeEn=c=>c==='체크카드'?'Debit':c==='신용카드'?'Credit':c==='듀얼카드'?'Dual':c;
+  const na=v=>(!v||v==='N/A')?'':v;
+  const headers=["Number","Date","Merchant","CardNumber","CardType","Transaction Amount","Transaction Type","Hotkey","Brand Selection","PIN출력","PIN입력","PIN Bypass","QPS","Successful/Failed","Memo"];
+  const dataRows=records.map((r,i)=>[
+    i+1, new Date().toISOString().split('T')[0], sn,
+    getAssignedCard(r.category,r.subCategory),
+    cardTypeEn(r.category), r.amount, r.subCategory,
+    na(r.hotkey), na(r.brandSelection), na(r.pinOut), na(r.pinIn),
+    na(r.pinBypass), na(r.qpsStatus), na(r.status), r.memo
+  ]);
   const ws=XLSX.utils.aoa_to_sheet([headers,...dataRows]);
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'UPI_Report');
   XLSX.writeFile(wb,`${sn}_UPI_Report.xlsx`);
@@ -780,8 +789,9 @@ async function uploadAndSave(){
   const payload={action:'saveSession',brandId:selectedBrandId,brandName:brand?.name||'',date:new Date().toISOString().split('T')[0],storeName:sn,records:enriched};
   const result=await sheetsPost(payload);
   isBusy=false;
+  // 세션 저장 시 sessionId도 로컬에 보관
   if(result&&result.ok){
-    if(brand)brand.sessions.push({date:payload.date,storeName:sn,records:enriched});
+    if(brand)brand.sessions.push({sessionId:result.sessionId, date:payload.date,storeName:sn,records:enriched});
     showUploadModal('success','저장 완료!','Google Sheets에 저장되었습니다.');
     setTimeout(()=>hideUploadModal(),1800);
   }else{hideUploadModal();showToast('❌ 저장 실패. URL 설정을 확인해주세요.');}
@@ -1078,9 +1088,12 @@ async function deleteSession(){
   isBusy=true;
   showUploadModal('loading','삭제 중...','세션을 삭제하고 있습니다.');
   const brand=brands.find(b=>b.id===sdBrandId);
+  const session=brand.sessions[sdSessionIdx];
+  const sessionId=session.sessionId; // 저장된 sessionId 사용
   brand.sessions.splice(sdSessionIdx,1);
   if(settings.sheetsUrl){
-    await sheetsPost({action:'deleteSession',brandId:sdBrandId,sessionIdx:sdSessionIdx});
+    // sessionId를 직접 전달해 정확히 삭제
+    await sheetsPost({action:'deleteSession', brandId:sdBrandId, sessionId:sessionId});
   }
   isBusy=false;
   showUploadModal('success','삭제 완료!','세션이 삭제되었습니다.');
@@ -1170,6 +1183,15 @@ function openSettings(){document.getElementById('sheetsUrlInput').value=settings
 
 // ══ 초기화 ══
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// ══ 새로고침 방지 ══
+window.addEventListener('beforeunload', e => {
+  if (screenHistory[screenHistory.length-1] === 'test' &&
+      records.some(r => r.category || r.amount || r.subCategory)) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
 
 // ══ 뒤로가기 물리키 처리 ══
 function pushState(){history.pushState({page:screenHistory[screenHistory.length-1]},'')}
