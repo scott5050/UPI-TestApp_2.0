@@ -249,11 +249,15 @@
     <h2>브랜드 선택</h2>
     <div style="width:36px"></div>
   </div>
-  <div class="container" style="padding-bottom:100px;overflow-y:auto;">
-    <p style="font-size:13px;color:#888;margin-top:8px;">테스트할 브랜드를 선택하세요.</p>
+  <div style="max-width:480px;margin:0 auto;padding:16px 20px 32px;overflow-y:auto;height:calc(100vh - 65px);box-sizing:border-box;">
+    <p style="font-size:13px;color:#888;margin-top:4px;margin-bottom:12px;">테스트할 브랜드를 선택하세요.</p>
     <div class="brand-select-list" id="brandSelectList"></div>
+    <button id="brandSelectNextBtn"
+      onclick="confirmBrandSelect()" disabled
+      style="width:100%;padding:16px;margin-top:20px;background:var(--grad);color:white;border:none;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,51,141,0.35);transition:var(--tr);">
+      다음 →
+    </button>
   </div>
-  <button class="float-next-btn" id="brandSelectNextBtn" onclick="confirmBrandSelect()" disabled>다음 →</button>
 </div>
 
 <!-- ══ 테스트 입력 ══ -->
@@ -867,8 +871,18 @@ async function openBrandDetail(id){
 }
 
 // 통합 지원 현황 테이블 빌드
+const FEATURE_KEYS=[
+  {key:'hotkey',       label:'Hotkey'},
+  {key:'brandSelection',label:'Brand Selection'},
+  {key:'pinOut',       label:'PIN 출력'},
+  {key:'pinBypass',    label:'PinByPass (PBP)'},
+  {key:'qpsStatus',    label:'QPS'},
+];
+
 function buildSupportTable(brandId,allRecords){
   const ov=overrides[brandId]||{};
+
+  // ── 카드×결제방식 상태 ──
   function getStatus(cat,sub){
     const key=`${cat}|${sub}`;
     if(ov[key])return ov[key];
@@ -896,6 +910,23 @@ function buildSupportTable(brandId,allRecords){
     });
     return cs.length?`<div class="method-chips">${cs.join('')}</div>`:`<span style="color:#ccc;font-size:12px;">-</span>`;
   }
+
+  // ── 기능 지원 상태 ──
+  function getFeatureStatus(key){
+    const ovKey=`feature|${key}`;
+    if(ov[ovKey])return ov[ovKey];
+    if(allRecords.some(r=>r[key]==='Y'))return 'Y';
+    if(allRecords.some(r=>r[key]==='N'))return 'N';
+    return null;
+  }
+  const featureRows=FEATURE_KEYS.map(({key,label})=>{
+    const st=getFeatureStatus(key);
+    const chip=st==='Y'?`<span class="method-chip mc-y">● 지원</span>`:
+               st==='N'?`<span class="method-chip mc-n">● 미지원</span>`:
+               `<span style="color:#ccc;font-size:12px;">-</span>`;
+    return `<tr><td class="card-label" style="font-size:12px;">${label}</td><td>${chip}</td></tr>`;
+  }).join('');
+
   return `<div class="support-table-wrap">
     <table class="support-table">
       <thead><tr><th style="width:52px;">카드</th><th>결제 방식</th></tr></thead>
@@ -904,6 +935,10 @@ function buildSupportTable(brandId,allRecords){
         <tr><td class="card-label">신용</td><td>${chips('신용카드',CARD_METHODS)}</td></tr>
         <tr><td class="card-label">듀얼</td><td>${dualChips()}</td></tr>
       </tbody>
+    </table>
+    <table class="support-table" style="margin-top:8px;">
+      <thead><tr><th colspan="2">기능 지원</th></tr></thead>
+      <tbody>${featureRows}</tbody>
     </table>
     <button class="edit-support-btn" onclick="openOverrideModal('${brandId}')">✏️ 현황 직접 수정</button>
   </div>`;
@@ -975,11 +1010,28 @@ function openOverrideModal(brandId){
   const chkBtns=CARD_METHODS.map(s=>makeBtn('체크카드',s,`체크 ${s}`)).join('');
   const credBtns=CARD_METHODS.map(s=>makeBtn('신용카드',s,`신용 ${s}`)).join('');
   const dualBtns=DUAL_ITEMS.map(({cat,sub,label})=>makeBtn(cat,sub,label)).join('');
+
+  // 기능 지원 버튼
+  function makeFeatureBtn(key,label){
+    const ovKey=`feature|${key}`;
+    const st=ovTemp[ovKey]||(()=>{
+      if(allR.some(r=>r[key]==='Y'))return 'Y';
+      if(allR.some(r=>r[key]==='N'))return 'N';
+      return 'NA';
+    })();
+    const cls=st==='Y'?'ov-btn ov-y':st==='N'?'ov-btn ov-n':'ov-btn ov-na';
+    const icon=st==='Y'?'🟢':st==='N'?'🔴':'⬜';
+    const sid='ovb_feat_'+key;
+    return `<button class="${cls}" id="${sid}" onclick="cycleFeatureBtn('${key}',this)">${icon} ${label}</button>`;
+  }
+  const featBtns=FEATURE_KEYS.map(({key,label})=>makeFeatureBtn(key,label)).join('');
+
   document.getElementById('ovContent').innerHTML=`
     <div class="ov-grid">
       <div><div class="ov-group-label">체크카드</div><div class="ov-btns">${chkBtns}</div></div>
       <div><div class="ov-group-label">신용카드</div><div class="ov-btns">${credBtns}</div></div>
       <div><div class="ov-group-label">듀얼카드</div><div class="ov-btns">${dualBtns}</div></div>
+      <div><div class="ov-group-label">기능 지원</div><div class="ov-btns">${featBtns}</div></div>
     </div>`;
   document.getElementById('ovModal').classList.add('show');
 }
@@ -989,6 +1041,15 @@ function cycleOvBtn(cat,sub,btn){
   const next=cur==='Y'?'N':cur==='N'?'NA':'Y';
   ovTemp[key]=next;
   const label=DUAL_ITEMS.find(o=>o.cat===cat&&o.sub===sub)?.label||`${cat==='체크카드'?'체크':'신용'} ${sub}`;
+  btn.className=next==='Y'?'ov-btn ov-y':next==='N'?'ov-btn ov-n':'ov-btn ov-na';
+  btn.innerHTML=(next==='Y'?'🟢':next==='N'?'🔴':'⬜')+' '+label;
+}
+function cycleFeatureBtn(key,btn){
+  const ovKey=`feature|${key}`;
+  const cur=ovTemp[ovKey]||'NA';
+  const next=cur==='Y'?'N':cur==='N'?'NA':'Y';
+  ovTemp[ovKey]=next;
+  const label=FEATURE_KEYS.find(f=>f.key===key)?.label||key;
   btn.className=next==='Y'?'ov-btn ov-y':next==='N'?'ov-btn ov-n':'ov-btn ov-na';
   btn.innerHTML=(next==='Y'?'🟢':next==='N'?'🔴':'⬜')+' '+label;
 }
@@ -1085,19 +1146,46 @@ function confirmDeleteSession(){
 }
 async function deleteSession(){
   if(isBusy)return;
-  isBusy=true;
-  showUploadModal('loading','삭제 중...','세션을 삭제하고 있습니다.');
   const brand=brands.find(b=>b.id===sdBrandId);
   const session=brand.sessions[sdSessionIdx];
-  const sessionId=session.sessionId; // 저장된 sessionId 사용
-  brand.sessions.splice(sdSessionIdx,1);
-  if(settings.sheetsUrl){
-    // sessionId를 직접 전달해 정확히 삭제
-    await sheetsPost({action:'deleteSession', brandId:sdBrandId, sessionId:sessionId});
+
+  // sessionId 확인 — 없으면 차단
+  const sessionId = session && session.sessionId;
+  if(!sessionId){
+    showToast('❌ sessionId 없음. 업로드 저장된 세션만 삭제 가능합니다.');
+    return;
   }
+
+  isBusy=true;
+  showUploadModal('loading','삭제 중...','세션을 삭제하고 있습니다.');
+
+  // 로컬 먼저 제거
+  brand.sessions.splice(sdSessionIdx,1);
+
+  // Sheets 삭제 — sessionId를 명시적으로 전달
+  let sheetsOk = true;
+  if(settings.sheetsUrl){
+    const result = await sheetsPost({
+      action:'deleteSession',
+      brandId: sdBrandId,
+      sessionId: String(sessionId)
+    });
+    if(!result || !result.ok){
+      sheetsOk = false;
+      console.error('Sheets 삭제 실패:', result);
+    }
+  }
+
   isBusy=false;
-  showUploadModal('success','삭제 완료!','세션이 삭제되었습니다.');
-  setTimeout(()=>{hideUploadModal();closeModal('sessDetailModal');renderBrandDetail(sdBrandId);renderBrandGrid();},1500);
+  showUploadModal('success',
+    sheetsOk ? '삭제 완료!' : '로컬 삭제됨 (Sheets 실패)',
+    sheetsOk ? '세션이 완전히 삭제되었습니다.' : '앱에서는 삭제됐지만 Sheets 확인 필요');
+  setTimeout(()=>{
+    hideUploadModal();
+    closeModal('sessDetailModal');
+    renderBrandDetail(sdBrandId);
+    renderBrandGrid();
+  },1800);
 }
 
 // ══ 특이사항 ══
