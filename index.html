@@ -240,11 +240,11 @@
              onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
         <span style="display:none;font-size:36px;font-weight:900;color:var(--blue);letter-spacing:2px;">UPI</span>
       </div>
-      <div class="main-subtitle">거래 테스트 매니저 v4.3</div>
+      <div class="main-subtitle">거래 테스트 매니저 v2.0</div>
       <button class="main-btn main-btn-primary" onclick="goToTestStart()" style="animation-delay:0.15s">🔍 테스트 시작</button>
       <button class="main-btn main-btn-secondary" onclick="openBrandsScreen()" style="animation-delay:0.25s">🏪 가맹점별 현황</button>
     </div>
-    <div class="main-version">UPI Test Manager v4.3</div>
+    <div class="main-version">UPI Test Manager v2.0</div>
   </div>
 </div>
 
@@ -1236,7 +1236,6 @@ async function saveSessDetail(){
 
 function confirmDeleteSession(){
   if(!confirm('이 날짜의 거래 내역 전체를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'))return;
-  if(!confirm('정말로 삭제하시겠습니까?'))return;
   deleteSession();
 }
 async function deleteSession(){
