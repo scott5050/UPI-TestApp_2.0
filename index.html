@@ -252,7 +252,7 @@
              onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
         <span style="display:none;font-size:36px;font-weight:900;color:var(--blue);letter-spacing:2px;">UPI</span>
       </div>
-      <div class="main-subtitle">거래 테스트 매니저 v4.3</div>
+      <div class="main-subtitle">거래 테스트 매니저 v2.0</div>
       <button class="main-btn main-btn-primary" onclick="goToTestStart()" style="animation-delay:0.15s">🔍 테스트 시작</button>
       <button class="main-btn main-btn-secondary" onclick="openBrandsScreen()" style="animation-delay:0.25s">🏪 가맹점별 현황</button>
     </div>
@@ -345,14 +345,14 @@
       </div>
       <div class="section-label">기타사항</div>
       <textarea id="memo" rows="3" placeholder="메모 입력" oninput="setVal('memo',this.value)"></textarea>
-      <div class="section-label">공통 테스트 카드</div>
+      <div class="section-label">카드번호 입력</div>
       <div class="card-panel">
         <div class="card-row"><span class="card-row-label">실물체크</span><input type="text" id="cc_realCheck" placeholder="카드 번호" oninput="updateCard('realCheck',this.value)"></div>
         <div class="card-row"><span class="card-row-label">실물신용</span><input type="text" id="cc_realCredit" placeholder="카드 번호" oninput="updateCard('realCredit',this.value)"></div>
         <div class="card-row"><span class="card-row-label">실물듀얼</span><input type="text" id="cc_realDual" placeholder="카드 번호" oninput="updateCard('realDual',this.value)"></div>
-        <div class="card-row"><span class="card-row-label">애플페이</span><input type="text" id="cc_apple" placeholder="카드 번호" oninput="updateCard('apple',this.value)"></div>
-        <div class="card-row"><span class="card-row-label">샤오미페이</span><input type="text" id="cc_xiaomi" placeholder="카드 번호" oninput="updateCard('xiaomi',this.value)"></div>
-        <div class="card-row"><span class="card-row-label">화웨이페이</span><input type="text" id="cc_huawei" placeholder="카드 번호" oninput="updateCard('huawei',this.value)"></div>
+        <div class="card-row"><span class="card-row-label">애플체크</span><input type="text" id="cc_apple" placeholder="카드 번호" oninput="updateCard('apple',this.value)"></div>
+        <div class="card-row"><span class="card-row-label">샤오미체크</span><input type="text" id="cc_xiaomi" placeholder="카드 번호" oninput="updateCard('xiaomi',this.value)"></div>
+        <div class="card-row"><span class="card-row-label">화웨이체크</span><input type="text" id="cc_huawei" placeholder="카드 번호" oninput="updateCard('huawei',this.value)"></div>
         <div class="card-row"><span class="card-row-label">QR</span><input type="text" id="cc_qr" placeholder="카드 번호" oninput="updateCard('qr',this.value)"></div>
       </div>
       <div class="bottom-bar">
@@ -1283,47 +1283,58 @@ function confirmDeleteSession(){
   deleteSession();
 }
 async function deleteSession(){
-  if(isBusy)return;
-  const brand=brands.find(b=>b.id===sdBrandId);
-  const session=brand.sessions[sdSessionIdx];
+  if(isBusy) return;
 
-  // sessionId 확인 — 없으면 차단
-  const sessionId = session && session.sessionId;
+  const brand = brands.find(b => b.id === sdBrandId);
+  if(!brand){ showToast('❌ 브랜드를 찾을 수 없습니다.'); return; }
+
+  const session = brand.sessions[sdSessionIdx];
+  if(!session){ showToast('❌ 세션을 찾을 수 없습니다.'); return; }
+
+  // sessionId 추출 — 여러 경로 시도
+  const sessionId = session.sessionId || session.id || null;
+
+  console.log('[deleteSession] brandId:', sdBrandId);
+  console.log('[deleteSession] sessionIdx:', sdSessionIdx);
+  console.log('[deleteSession] session:', JSON.stringify(session).substring(0, 200));
+  console.log('[deleteSession] sessionId:', sessionId);
+
   if(!sessionId){
-    showToast('❌ sessionId 없음. 업로드 저장된 세션만 삭제 가능합니다.');
+    showToast('❌ sessionId 없음. 이 세션은 삭제할 수 없습니다.');
     return;
   }
 
-  isBusy=true;
+  isBusy = true;
   showUploadModal('loading','삭제 중...','세션을 삭제하고 있습니다.');
 
-  // 로컬 먼저 제거
-  brand.sessions.splice(sdSessionIdx,1);
+  // 로컬에서 먼저 제거
+  brand.sessions.splice(sdSessionIdx, 1);
 
-  // Sheets 삭제 — sessionId를 명시적으로 전달
+  // Sheets 삭제
   let sheetsOk = true;
   if(settings.sheetsUrl){
     const result = await sheetsPost({
-      action:'deleteSession',
-      brandId: sdBrandId,
-      sessionId: String(sessionId)
+      action    : 'deleteSession',
+      brandId   : String(sdBrandId),
+      sessionId : String(sessionId)
     });
+    console.log('[deleteSession] Sheets result:', JSON.stringify(result));
     if(!result || !result.ok){
       sheetsOk = false;
-      console.error('Sheets 삭제 실패:', result);
     }
   }
 
-  isBusy=false;
+  isBusy = false;
   showUploadModal('success',
-    sheetsOk ? '삭제 완료!' : '로컬 삭제됨 (Sheets 실패)',
-    sheetsOk ? '세션이 완전히 삭제되었습니다.' : '앱에서는 삭제됐지만 Sheets 확인 필요');
+    sheetsOk ? '삭제 완료!' : '⚠️ 로컬만 삭제됨',
+    sheetsOk ? '세션이 완전히 삭제되었습니다.' : 'Sheets 삭제 실패 — 콘솔 확인 요망'
+  );
   setTimeout(()=>{
     hideUploadModal();
     closeModal('sessDetailModal');
     renderBrandDetail(sdBrandId);
     renderBrandGrid();
-  },1800);
+  }, 1800);
 }
 
 // ══ 특이사항 ══
