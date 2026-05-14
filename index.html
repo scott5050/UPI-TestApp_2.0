@@ -749,28 +749,37 @@ function buildSummaryHTML(recs,storeName){
     <div class="report-title">📋 요약 — ${storeName||'미지정'}</div>
     <div class="summary-row"><span><span class="status-tag tag-success">성공</span></span><span style="font-size:12px;">${sl.join(', ')||'없음'}</span></div>
     <div class="summary-row"><span><span class="status-tag tag-fail">실패</span></span><span style="font-size:12px;">${fl.join(', ')||'없음'}</span></div>
-          <div style="font-size:11px;color:#888;margin-top:10px;padding-top:10px;border-top:1px dashed #ddd;">
+        <div style="font-size:11px;color:#888;margin-top:10px;padding-top:10px;border-top:1px dashed #ddd;">
       Hotkey:${f(getSummaryStatus('hotkey',recs))} / Brand:${f(getSummaryStatus('brandSelection',recs))} / PIN출력:${f(getSummaryStatus('pinOut',recs))} / PIN입력:${f(getSummaryStatus('pinIn',recs))} / PBP:${f(getSummaryStatus('pinBypass',recs))} / QPS:${f(getSummaryStatus('qpsStatus',recs))}
     </div>
   </div>`;
 }
-function buildRecordDetailHTML(r,editable=false,prefix=''){
-  const st=r.status==='Y'?'<span class="status-tag tag-success">성공</span>':r.status==='N'?'<span class="status-tag tag-fail">실패</span>':'<span class="status-tag" style="background:#ccc">N/A</span>';
-  const f=v=>v==='Y'?'O':v==='N'?'X':'-';
+function buildRecordDetailHTML(r, editable=false){
+  const st = r.status==='Y' ? '<span class="status-tag tag-success">성공</span>'
+           : r.status==='N' ? '<span class="status-tag tag-fail">실패</span>'
+           : '<span class="status-tag" style="background:#ccc">N/A</span>';
+  const f = v => v==='Y'?'O' : v==='N'?'X' : '-';
+
   if(!editable){
-    return `<div class="summary-row"><b>카드 / 방식</b><span>${r.category||'-'} / ${r.subCategory||'-'}</span></div>
+    return `
+      <div class="summary-row"><b>카드 / 방식</b><span>${r.category||'-'} / ${r.subCategory||'-'}</span></div>
       <div class="summary-row"><b>금액 / 결과</b><span>${r.amount||'￦0'} (${getAmountType(r.amount,r.subCategory)}) ${st}</span></div>
-      <div class="summary-row" style="border:none;font-size:11px;color:#666;"><b>기능지원</b><span>Hotkey:${f(r.hotkey)} Brand:${f(r.brandSelection)} PIN:${f(r.pinOut)} PBP:${f(r.pinBypass)} QPS:${f(r.qpsStatus)}</span></div>
+      <div class="summary-row" style="border:none;font-size:11px;color:#666;">
+        <b>기능지원</b>
+        <span>Hotkey:${f(r.hotkey)} Brand:${f(r.brandSelection)}<br>PIN출력:${f(r.pinOut)} PIN입력:${f(r.pinIn)} PBP:${f(r.pinBypass)} QPS:${f(r.qpsStatus)}</span>
+      </div>
       ${r.memo?`<div style="font-size:12px;color:#888;padding-top:8px;"><b>Memo:</b> ${r.memo}</div>`:''}`;
   }
+
   // 수정 모드
   const cats=['체크카드','신용카드','듀얼카드'];
   const subs=['IC 인서트','실물 NFC','ApplePay','XiaomiPay','HuaweiPay','QR CPM'];
   const tog=(key,label)=>{
-    const cur=r[key]||'N/A';const cls=cur==='Y'?'state-y':cur==='N'?'state-n':'state-na';
+    const cur=r[key]||'N/A';
+    const cls=cur==='Y'?'state-y':cur==='N'?'state-n':'state-na';
     return `<div class="toggle-row" style="margin-bottom:6px;">
       <span class="toggle-label" style="font-size:12px;">${label}</span>
-      <button class="toggle-btn ${cls}" onclick="cycleSdField('${prefix}${key}',this)">${cur}</button>
+      <button class="toggle-btn ${cls}" onclick="cycleSdField('${key}',this)">${cur}</button>
     </div>`;
   };
   return `
@@ -788,10 +797,19 @@ function buildRecordDetailHTML(r,editable=false,prefix=''){
     </div>
     <div style="margin-bottom:10px;">
       <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px;">금액</div>
-      <div class="amount-wrap"><input type="text" id="sd_amount" value="${(r.amount||'').replace('￦','').replace(/[^0-9,]/g,'')}" oninput="setSdAmount(this)" inputmode="numeric" style="width:100%;padding:10px 36px 10px 12px;border:none;outline:none;font-size:15px;font-weight:700;background:transparent;"><span class="amount-unit" style="font-size:14px;">￦</span></div>
+      <div class="amount-wrap">
+        <input type="text" id="sd_amount" value="${(r.amount||'').replace('￦','').replace(/[^0-9,]/g,'')}"
+          oninput="setSdAmount(this)" inputmode="numeric"
+          style="width:100%;padding:10px 36px 10px 12px;border:none;outline:none;font-size:15px;font-weight:700;background:transparent;">
+        <span class="amount-unit" style="font-size:14px;">￦</span>
+      </div>
     </div>
     <div style="margin-bottom:6px;">
-      ${tog('hotkey','Hotkey')}${tog('brandSelection','Brand')}${tog('pinOut','PIN 출력')}${tog('pinBypass','PinByPass')}
+      ${tog('hotkey','Hotkey')}
+      ${tog('brandSelection','Brand')}
+      ${tog('pinOut','PIN 출력')}
+      ${tog('pinIn','PIN 입력')}
+      ${tog('pinBypass','PinByPass')}
       ${r.subCategory!=='IC 인서트'?tog('qpsStatus','QPS'):''}
       ${tog('status','승인 결과')}
     </div>
