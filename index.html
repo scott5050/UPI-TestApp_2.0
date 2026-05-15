@@ -877,6 +877,8 @@ async function uploadAndSave(){
     memo           : r.memo           || '',
     cardNumber     : getAssignedCard(r.category, r.subCategory)
   }));
+  // ── 진단용 로그 ──
+  console.log('[enriched 전송 데이터]', JSON.stringify(enriched, null, 2));
   const payload={action:'saveSession',brandId:selectedBrandId,brandName:brand?.name||'',date:new Date().toISOString().split('T')[0],storeName:sn,records:enriched};
   const result=await sheetsPost(payload);
   isBusy=false;
