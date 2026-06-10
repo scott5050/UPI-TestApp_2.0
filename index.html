@@ -562,7 +562,8 @@ const DUAL_ITEMS=[
 ];
 
 // ══ 로컬 설정 ══
-function loadLocalSettings(){
+const STORE_KEY = 'upi_app_v2_0'; // 이 앱만의 고유 키 이름 지정
+  function loadLocalSettings(){
   try{
     const s=localStorage.getItem('upi_settings');if(s)settings=JSON.parse(s);
     const ov=localStorage.getItem('upi_overrides');if(ov)overrides=JSON.parse(ov);
@@ -571,7 +572,7 @@ function loadLocalSettings(){
 function saveLocalOverrides(){try{localStorage.setItem('upi_overrides',JSON.stringify(overrides));}catch(e){}}
 function saveSettings(){
   settings.sheetsUrl=document.getElementById('sheetsUrlInput').value.trim();
-  try{localStorage.setItem('upi_settings',JSON.stringify(settings));}catch(e){}
+  try{localStorage.setItem(STORE_KEY + '_settings',JSON.stringify(settings));}catch(e){}
   closeModal('settingsModal');showToast('✅ 설정이 저장되었습니다.');
   if(settings.sheetsUrl)loadBrandsFromSheets();
 }
