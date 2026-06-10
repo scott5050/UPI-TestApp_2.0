@@ -565,7 +565,7 @@ const DUAL_ITEMS=[
 // ══ 로컬 설정 ══
 function loadLocalSettings(){
   try{
-    const s = localStorage.getItem(STORE_KEY + '_settings');
+    const s = localStorage.getItem(STORE_KEY + '_settings');if(s)settings=JSON.parse(s);
     const ov=localStorage.getItem('upi_overrides');if(ov)overrides=JSON.parse(ov);
   }catch(e){}
 }
