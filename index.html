@@ -562,14 +562,44 @@ const DUAL_ITEMS=[
 ];
 
 // ══ 로컬 설정 ══
-const STORE_KEY = 'upi_app_v2_0'; // 이 앱만의 고유 키 이름 지정
-  function loadLocalSettings(){
+const STORE_KEY = 'ppl_app_v1'; // 💡 다음 개별 프로젝트 때는 이 이름만 'ppl_app_v2' 등으로 바꿔주시면 됩니다.
+
+function loadLocalSettings(){
   try{
-    const s=localStorage.getItem('upi_settings');if(s)settings=JSON.parse(s);
-    const ov=localStorage.getItem('upi_overrides');if(ov)overrides=JSON.parse(ov);
+    const s = localStorage.getItem(STORE_KEY + '_settings'); if(s) settings = JSON.parse(s);
+    // 오버라이드 데이터도 다른 프로젝트와 섞이지 않도록 고유 키를 적용했습니다.
+    const ov = localStorage.getItem(STORE_KEY + '_overrides'); if(ov) overrides = JSON.parse(ov);
   }catch(e){}
 }
-function saveLocalOverrides(){try{localStorage.setItem('upi_overrides',JSON.stringify(overrides));}catch(e){}}
+
+// ==========================================
+// 💡 [수정본 추가 영역] 앱 진입 시 자동 실행 (PPL과 동일한 동작 구현)
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+  // 1. 기기에 저장된 링크(settings) 및 오버라이드 데이터 불러오기
+  loadLocalSettings();
+  
+  // 2. 저장된 구글 시트 URL이 존재할 경우 자동 로딩 실행
+  if (settings && settings.sheetsUrl) {
+    // 설정 모달의 Input 창에 기존 URL 시각적으로 채워넣기
+    const sheetsUrlInput = document.getElementById('sheetsUrlInput');
+    if (sheetsUrlInput) {
+      sheetsUrlInput.value = settings.sheetsUrl;
+    }
+    
+    // 3. PPL 어플처럼 앱 실행 시 자동으로 브랜드 데이터 로딩
+    loadBrandsFromSheets();
+  }
+});
+// ==========================================
+
+function saveLocalOverrides(){
+  try{
+    localStorage.setItem(STORE_KEY + '_overrides', JSON.stringify(overrides));
+  }catch(e){}
+}
+
+// ... 기존 코드 계속 (saveSettings, sheetsGet 등) ...
 function saveSettings(){
   settings.sheetsUrl=document.getElementById('sheetsUrlInput').value.trim();
   try{localStorage.setItem(STORE_KEY + '_settings',JSON.stringify(settings));}catch(e){}
